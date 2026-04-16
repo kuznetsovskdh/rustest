@@ -14,6 +14,7 @@ export default function Navbar() {
       <Link to="/catalog" style={{ color: "#fff", fontWeight: "bold", textDecoration: "none" }}>Рустест</Link>
       <Link to="/catalog" style={{ color: "#ccc", textDecoration: "none" }}>Каталог</Link>
       {token && <Link to="/history" style={{ color: "#ccc", textDecoration: "none" }}>История</Link>}
+      {token && <Link to="/analytics" style={{ color: "#ccc", textDecoration: "none" }}>Аналитика</Link>}
       <div style={{ marginLeft: "auto" }}>
         {token
           ? <button onClick={logout} style={{ cursor: "pointer" }}>Выйти</button>

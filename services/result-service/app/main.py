@@ -6,6 +6,7 @@ from datetime import datetime
 from app.database import Base, engine, get_db
 from app.models import Attempt, Answer, EventLog, EventTypeEnum
 from app.schemas import StartAttemptRequest, FinishAttemptRequest, AttemptResponse
+from app import analytics
 import os
 
 Base.metadata.create_all(bind=engine)
@@ -23,14 +24,18 @@ def get_user(authorization: Optional[str] = Header(None)):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+def require_admin(user=Depends(get_user)):
+    if user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    return user
+
 @app.post("/attempts/start", response_model=AttemptResponse)
 def start_attempt(data: StartAttemptRequest, user=Depends(get_user), db: Session = Depends(get_db)):
     attempt = Attempt(user_id=user["id"], test_id=data.test_id)
     db.add(attempt)
     db.commit()
     db.refresh(attempt)
-    log = EventLog(user_id=user["id"], test_id=data.test_id, event_type=EventTypeEnum.start_test)
-    db.add(log)
+    db.add(EventLog(user_id=user["id"], test_id=data.test_id, event_type=EventTypeEnum.start_test))
     db.commit()
     return attempt
 
@@ -63,3 +68,19 @@ def get_attempt(attempt_id: int, user=Depends(get_user), db: Session = Depends(g
     if not attempt:
         raise HTTPException(status_code=404, detail="Attempt not found")
     return attempt
+
+@app.get("/analytics/progress")
+def progress(user=Depends(get_user), db: Session = Depends(get_db)):
+    return analytics.get_progress(user["id"], db)
+
+@app.get("/analytics/errors")
+def errors(user=Depends(get_user), db: Session = Depends(get_db)):
+    return analytics.get_topic_errors(user["id"], db)
+
+@app.get("/analytics/recommendations")
+def recommendations(user=Depends(get_user), db: Session = Depends(get_db)):
+    return analytics.get_recommendations(user["id"], db)
+
+@app.get("/analytics/funnel")
+def funnel(user=Depends(require_admin), db: Session = Depends(get_db)):
+    return analytics.get_funnel(db)
