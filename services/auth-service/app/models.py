@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, Integer, String, Enum, Boolean
 from app.database import Base
 import enum
 
@@ -15,3 +15,4 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     name = Column(String, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.user)
+    is_frozen = Column(Boolean, default=False)

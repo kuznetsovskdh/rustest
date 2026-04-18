@@ -25,6 +25,7 @@ class UserResponse(BaseModel):
     email: str
     name: str
     role: RoleEnum
+    is_frozen: bool = False
 
     class Config:
         from_attributes = True
