@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import List, Optional
+from datetime import datetime
 
 class DifficultyEnum(str, Enum):
     easy = "easy"
@@ -56,5 +57,14 @@ class TestListResponse(BaseModel):
     difficulty: DifficultyEnum
     timer_seconds: int
     is_published: bool
+    class Config:
+        from_attributes = True
+
+class TestLinkResponse(BaseModel):
+    id: int
+    token: str
+    test_id: int
+    label: Optional[str]
+    created_at: datetime
     class Config:
         from_attributes = True

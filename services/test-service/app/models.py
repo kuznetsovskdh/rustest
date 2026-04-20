@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, Enum, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, Enum, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
+from datetime import datetime
 import enum
 
 class DifficultyEnum(str, enum.Enum):
@@ -19,6 +20,7 @@ class Test(Base):
     is_published = Column(Boolean, default=False)
     created_by = Column(Integer, nullable=False)
     questions = relationship("Question", back_populates="test", cascade="all, delete")
+    links = relationship("TestLink", back_populates="test", cascade="all, delete")
 
 class Question(Base):
     __tablename__ = "questions"
@@ -35,3 +37,13 @@ class Option(Base):
     text = Column(String, nullable=False)
     is_correct = Column(Boolean, default=False)
     question = relationship("Question", back_populates="options")
+
+class TestLink(Base):
+    __tablename__ = "test_links"
+    id = Column(Integer, primary_key=True)
+    token = Column(String, unique=True, nullable=False)
+    test_id = Column(Integer, ForeignKey("tests.id"), nullable=False)
+    created_by = Column(Integer, nullable=False)
+    label = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    test = relationship("Test", back_populates="links")

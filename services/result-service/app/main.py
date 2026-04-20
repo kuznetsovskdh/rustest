@@ -29,6 +29,11 @@ def require_admin(user=Depends(get_user)):
         raise HTTPException(status_code=403, detail="Admin only")
     return user
 
+def require_teacher(user=Depends(get_user)):
+    if user["role"] not in ("admin", "teacher"):
+        raise HTTPException(status_code=403, detail="Teacher or admin only")
+    return user
+
 @app.post("/attempts/start", response_model=AttemptResponse)
 def start_attempt(data: StartAttemptRequest, user=Depends(get_user), db: Session = Depends(get_db)):
     attempt = Attempt(user_id=user["id"], test_id=data.test_id)
@@ -84,3 +89,33 @@ def recommendations(user=Depends(get_user), db: Session = Depends(get_db)):
 @app.get("/analytics/funnel")
 def funnel(user=Depends(require_admin), db: Session = Depends(get_db)):
     return analytics.get_funnel(db)
+
+@app.get("/analytics/group/{test_id}")
+def group_report(test_id: int, student_ids: str = "", user=Depends(require_teacher), db: Session = Depends(get_db)):
+    ids = [int(i) for i in student_ids.split(",") if i.strip().isdigit()]
+    q = db.query(Attempt).filter(Attempt.test_id == test_id, Attempt.finished_at != None)
+    if ids:
+        q = q.filter(Attempt.user_id.in_(ids))
+    attempts = q.all()
+    if not attempts:
+        return {"test_id": test_id, "total_attempts": 0, "avg_score": 0, "distribution": []}
+    scores = []
+    for a in attempts:
+        pct = round((a.score / a.total) * 100) if a.total > 0 else 0
+        scores.append(pct)
+    avg = round(sum(scores) / len(scores), 1)
+    above70 = sum(1 for s in scores if s >= 70)
+    below70 = len(scores) - above70
+    return {
+        "test_id": test_id,
+        "total_attempts": len(scores),
+        "avg_score": avg,
+        "passed": above70,
+        "failed": below70,
+        "distribution": {
+            "0-49": sum(1 for s in scores if s < 50),
+            "50-69": sum(1 for s in scores if 50 <= s < 70),
+            "70-89": sum(1 for s in scores if 70 <= s < 90),
+            "90-100": sum(1 for s in scores if s >= 90),
+        }
+    }
