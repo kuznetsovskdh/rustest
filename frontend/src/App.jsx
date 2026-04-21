@@ -13,6 +13,7 @@ import UserManager from "./pages/admin/UserManager";
 import TeacherPanel from "./pages/TeacherPanel";
 import LinkTest from "./pages/LinkTest";
 import Notifications from "./pages/Notifications";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/teacher" element={<TeacherPanel />} />
           <Route path="/link/:token" element={<LinkTest />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
     </BrowserRouter>

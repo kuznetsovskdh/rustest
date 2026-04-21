@@ -24,6 +24,13 @@ class InviteRequest(BaseModel):
     student_ids: List[int]
     payload: Optional[str] = None
 
+class UpdateNameRequest(BaseModel):
+    name: str
+
+class UpdatePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
 @app.post("/auth/register", response_model=TokenResponse)
 def register(data: RegisterRequest, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == data.email).first():
@@ -47,6 +54,20 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 def me(user: User = Depends(get_current_user)):
     return user
 
+@app.patch("/auth/me/name")
+def update_name(data: UpdateNameRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user.name = data.name
+    db.commit()
+    return {"ok": True}
+
+@app.patch("/auth/me/password")
+def update_password(data: UpdatePasswordRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(data.old_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Wrong password")
+    user.hashed_password = hash_password(data.new_password)
+    db.commit()
+    return {"ok": True}
+
 @app.get("/auth/users", response_model=List[UserResponse])
 def get_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != RoleEnum.admin:
@@ -64,7 +85,6 @@ def update_role(user_id: int, role: str, current_user: User = Depends(get_curren
         raise HTTPException(status_code=404, detail="User not found")
     user.role = role
     db.commit()
-    db.refresh(user)
     return {"id": user.id, "email": user.email, "role": user.role}
 
 @app.patch("/auth/users/{user_id}/freeze")
@@ -121,8 +141,11 @@ def get_notifications(current_user: User = Depends(get_current_user), db: Sessio
 def invite_student(student_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role not in (RoleEnum.teacher, RoleEnum.admin):
         raise HTTPException(status_code=403, detail="Teacher only")
+    student = db.query(User).filter(User.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="User not found")
     db.add(Notification(from_user_id=current_user.id, to_user_id=student_id,
-                        type="invite_student", payload=str(current_user.id)))
+                        type="invite_student", payload=f"{current_user.id}:{current_user.name}"))
     db.commit()
     return {"ok": True}
 
@@ -142,4 +165,17 @@ def mark_read(notif_id: int, current_user: User = Depends(get_current_user), db:
     if n:
         n.is_read = True
         db.commit()
+    return {"ok": True}
+
+@app.post("/auth/notifications/{notif_id}/accept")
+def accept_invite(notif_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    n = db.query(Notification).filter(Notification.id == notif_id, Notification.to_user_id == current_user.id).first()
+    if not n or n.type != "invite_student":
+        raise HTTPException(status_code=404, detail="Notification not found")
+    teacher_id = int(n.payload.split(":")[0])
+    exists = db.query(TeacherStudent).filter(TeacherStudent.teacher_id == teacher_id, TeacherStudent.student_id == current_user.id).first()
+    if not exists:
+        db.add(TeacherStudent(teacher_id=teacher_id, student_id=current_user.id))
+    n.is_read = True
+    db.commit()
     return {"ok": True}

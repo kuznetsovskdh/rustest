@@ -36,17 +36,16 @@ export default function Navbar() {
       {token && <Link to="/analytics" style={{ color: "#ccc", textDecoration: "none" }}>Аналитика</Link>}
       {isTeacher && <Link to="/teacher" style={{ color: "#90caf9", textDecoration: "none" }}>Преподаватель</Link>}
       {isAdmin && <Link to="/admin" style={{ color: "#f0c040", textDecoration: "none" }}>Админ</Link>}
-      {token && (
-        <Link to="/notifications" style={{ color: "#ccc", textDecoration: "none", position: "relative" }}>
-          🔔
-          {unread > 0 && (
-            <span style={{ position: "absolute", top: -6, right: -8, background: "#f44336", color: "white", borderRadius: "50%", width: 16, height: 16, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {unread}
-            </span>
-          )}
-        </Link>
-      )}
-      <div style={{ marginLeft: "auto" }}>
+      <div style={{ marginLeft: "auto", display: "flex", gap: "1rem", alignItems: "center" }}>
+        {token && (
+          <Link to="/notifications" style={{ color: unread > 0 ? "#f44336" : "#ccc", textDecoration: "none", fontSize: 14, display: "flex", alignItems: "center", gap: "4px" }}>
+            Уведомления
+            {unread > 0 && (
+              <span style={{ background: "#f44336", color: "white", borderRadius: 10, padding: "1px 7px", fontSize: 12 }}>{unread}</span>
+            )}
+          </Link>
+        )}
+        {token && <Link to="/profile" style={{ color: "#ccc", textDecoration: "none", fontSize: 14 }}>Профиль</Link>}
         {token
           ? <button onClick={logout} style={{ cursor: "pointer" }}>Выйти</button>
           : <Link to="/login" style={{ color: "#ccc", textDecoration: "none" }}>Войти</Link>}

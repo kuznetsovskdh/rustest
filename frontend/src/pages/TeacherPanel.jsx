@@ -66,7 +66,12 @@ export default function TeacherPanel() {
     showMsg("Ученик удалён");
   }
 
-  async function sendInvites() {
+  async function inviteStudent(userId) {
+    await api.post(`/auth/notifications/invite-student/${userId}`);
+    showMsg("Приглашение отправлено ✓");
+  }
+
+  async function sendTestInvites() {
     if (!selected || inviteSelected.length === 0) return;
     const payload = `${selected.id}:${selected.title}:${link?.token || ""}`;
     await api.post("/auth/notifications/invite-test", { student_ids: inviteSelected, payload });
@@ -119,7 +124,7 @@ export default function TeacherPanel() {
             </div>
           </div>
           <div>
-            <h3>Добавить ученика</h3>
+            <h3>Пригласить ученика</h3>
             <input placeholder="Поиск по email или имени..." value={addSearch} onChange={e => setAddSearch(e.target.value)}
               style={{ width: "100%", padding: "0.5rem", borderRadius: 6, border: "1px solid #ddd", marginBottom: "0.75rem", boxSizing: "border-box" }} />
             {notAdded.length === 0 && <p style={{ color: "#999" }}>Нет доступных пользователей</p>}
@@ -130,7 +135,10 @@ export default function TeacherPanel() {
                     <div style={{ fontWeight: 500 }}>{u.name}</div>
                     <div style={{ fontSize: 13, color: "#666" }}>{u.email}</div>
                   </div>
-                  <button onClick={() => addStudent(u.id)} style={{ fontSize: 12, background: "#e8f5e9", border: "1px solid #2e7d32", color: "#2e7d32", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>+ Добавить</button>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => addStudent(u.id)} style={{ fontSize: 12, background: "#e8f5e9", border: "1px solid #2e7d32", color: "#2e7d32", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>+ Добавить</button>
+                    <button onClick={() => inviteStudent(u.id)} style={{ fontSize: 12, background: "#e3f2fd", border: "1px solid #1565c0", color: "#1565c0", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>✉️ Пригласить</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -163,7 +171,6 @@ export default function TeacherPanel() {
                   style={{ flex: 1, padding: "0.5rem", borderRadius: 6, border: "1px solid #ddd" }} />
                 <button onClick={createLink}>Создать</button>
               </div>
-
               {link ? (
                 <div style={{ padding: "0.75rem 1rem", border: "1px solid #ddd", borderRadius: 8, marginBottom: "1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -241,7 +248,7 @@ export default function TeacherPanel() {
               ))}
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button onClick={sendInvites} disabled={inviteSelected.length === 0}
+              <button onClick={sendTestInvites} disabled={inviteSelected.length === 0}
                 style={{ flex: 1, background: "#1a1a2e", color: "white", border: "none", padding: "0.75rem", borderRadius: 6, cursor: "pointer" }}>
                 Отправить ({inviteSelected.length})
               </button>
