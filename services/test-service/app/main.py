@@ -4,7 +4,7 @@ from typing import List, Optional
 from jose import jwt, JWTError
 from app.database import Base, engine, get_db
 from app.models import Test, Question, Option, TestLink
-from app.schemas import TestCreate, TestResponse, TestListResponse, QuestionCreate, TestLinkResponse
+from app.schemas import TestCreate, TestResponse, TestListResponse, QuestionCreate, TestLinkResponse, QuestionResponse
 import os, secrets
 
 Base.metadata.create_all(bind=engine)
@@ -35,63 +35,68 @@ def require_teacher(user=Depends(get_user)):
 @app.post("/tests", response_model=TestResponse)
 def create_test(data: TestCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
     test = Test(**data.model_dump(), created_by=user["id"])
-    db.add(test)
-    db.commit()
-    db.refresh(test)
+    db.add(test); db.commit(); db.refresh(test)
     return test
 
 @app.put("/tests/{test_id}", response_model=TestResponse)
 def update_test(test_id: int, data: TestCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
-    for k, v in data.model_dump().items():
-        setattr(test, k, v)
-    db.commit()
-    db.refresh(test)
+    if not test: raise HTTPException(status_code=404, detail="Test not found")
+    for k, v in data.model_dump().items(): setattr(test, k, v)
+    db.commit(); db.refresh(test)
     return test
 
 @app.post("/tests/{test_id}/questions", response_model=TestResponse)
 def add_question(test_id: int, data: QuestionCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
-    question = Question(test_id=test_id, text=data.text)
-    db.add(question)
-    db.flush()
+    if not test: raise HTTPException(status_code=404, detail="Test not found")
+    question = Question(test_id=test_id, text=data.text, rule_id=data.rule_id)
+    db.add(question); db.flush()
     for opt in data.options:
         db.add(Option(question_id=question.id, text=opt.text, is_correct=opt.is_correct))
+    db.commit(); db.refresh(test)
+    return test
+
+@app.put("/tests/{test_id}/questions/{question_id}", response_model=TestResponse)
+def update_question(test_id: int, question_id: int, data: QuestionCreate, user=Depends(require_admin), db: Session = Depends(get_db)):
+    q = db.query(Question).filter(Question.id == question_id, Question.test_id == test_id).first()
+    if not q: raise HTTPException(status_code=404, detail="Question not found")
+    q.text = data.text
+    q.rule_id = data.rule_id
+    db.query(Option).filter(Option.question_id == question_id).delete()
+    for opt in data.options:
+        db.add(Option(question_id=question_id, text=opt.text, is_correct=opt.is_correct))
     db.commit()
+    test = db.query(Test).filter(Test.id == test_id).first()
     db.refresh(test)
     return test
 
 @app.delete("/tests/{test_id}/questions/{question_id}", response_model=TestResponse)
 def delete_question(test_id: int, question_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     q = db.query(Question).filter(Question.id == question_id, Question.test_id == test_id).first()
-    if not q:
-        raise HTTPException(status_code=404, detail="Question not found")
-    db.delete(q)
-    db.commit()
+    if not q: raise HTTPException(status_code=404, detail="Question not found")
+    db.delete(q); db.commit()
     return db.query(Test).filter(Test.id == test_id).first()
+
+@app.patch("/tests/{test_id}/questions/{question_id}/rule")
+def set_question_rule(test_id: int, question_id: int, rule_id: Optional[int] = None, user=Depends(require_admin), db: Session = Depends(get_db)):
+    q = db.query(Question).filter(Question.id == question_id, Question.test_id == test_id).first()
+    if not q: raise HTTPException(status_code=404, detail="Question not found")
+    q.rule_id = rule_id; db.commit()
+    return {"ok": True, "rule_id": q.rule_id}
 
 @app.patch("/tests/{test_id}/publish", response_model=TestResponse)
 def publish_test(test_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
-    test.is_published = True
-    db.commit()
-    db.refresh(test)
+    if not test: raise HTTPException(status_code=404, detail="Test not found")
+    test.is_published = True; db.commit(); db.refresh(test)
     return test
 
 @app.patch("/tests/{test_id}/hide", response_model=TestResponse)
 def hide_test(test_id: int, user=Depends(require_admin), db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
-    test.is_published = False
-    db.commit()
-    db.refresh(test)
+    if not test: raise HTTPException(status_code=404, detail="Test not found")
+    test.is_published = False; db.commit(); db.refresh(test)
     return test
 
 @app.get("/tests/all", response_model=List[TestListResponse])
@@ -101,34 +106,34 @@ def list_all_tests(user=Depends(require_admin), db: Session = Depends(get_db)):
 @app.get("/tests", response_model=List[TestListResponse])
 def list_tests(category: Optional[str] = None, db: Session = Depends(get_db)):
     q = db.query(Test).filter(Test.is_published == True)
-    if category:
-        q = q.filter(Test.category == category)
+    if category: q = q.filter(Test.category == category)
     return q.all()
 
 @app.get("/tests/{test_id}", response_model=TestResponse)
 def get_test(test_id: int, db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
+    if not test: raise HTTPException(status_code=404, detail="Test not found")
     return test
+
+@app.get("/questions/{question_id}", response_model=QuestionResponse)
+def get_question(question_id: int, db: Session = Depends(get_db)):
+    q = db.query(Question).filter(Question.id == question_id).first()
+    if not q: raise HTTPException(status_code=404, detail="Question not found")
+    return q
 
 @app.post("/tests/{test_id}/links", response_model=TestLinkResponse)
 def create_link(test_id: int, label: Optional[str] = None, user=Depends(require_teacher), db: Session = Depends(get_db)):
     test = db.query(Test).filter(Test.id == test_id).first()
-    if not test:
-        raise HTTPException(status_code=404, detail="Test not found")
+    if not test: raise HTTPException(status_code=404, detail="Test not found")
     db.query(TestLink).filter(TestLink.test_id == test_id, TestLink.created_by == user["id"]).delete()
     link = TestLink(token=secrets.token_urlsafe(12), test_id=test_id, created_by=user["id"], label=label)
-    db.add(link)
-    db.commit()
-    db.refresh(link)
+    db.add(link); db.commit(); db.refresh(link)
     return link
 
 @app.get("/links/{token}", response_model=TestResponse)
 def get_test_by_link(token: str, db: Session = Depends(get_db)):
     link = db.query(TestLink).filter(TestLink.token == token).first()
-    if not link:
-        raise HTTPException(status_code=404, detail="Link not found")
+    if not link: raise HTTPException(status_code=404, detail="Link not found")
     return link.test
 
 @app.get("/tests/{test_id}/links", response_model=List[TestLinkResponse])

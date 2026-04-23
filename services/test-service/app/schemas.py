@@ -22,10 +22,12 @@ class OptionResponse(BaseModel):
 class QuestionCreate(BaseModel):
     text: str
     options: List[OptionCreate]
+    rule_id: Optional[int] = None
 
 class QuestionResponse(BaseModel):
     id: int
     text: str
+    rule_id: Optional[int] = None
     options: List[OptionResponse]
     class Config:
         from_attributes = True

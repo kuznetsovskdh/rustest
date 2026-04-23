@@ -119,3 +119,7 @@ def group_report(test_id: int, student_ids: str = "", user=Depends(require_teach
             "90-100": sum(1 for s in scores if s >= 90),
         }
     }
+
+@app.get("/analytics/question-errors/{question_id}")
+def question_errors(question_id: int, user=Depends(get_user), db: Session = Depends(get_db)):
+    return analytics.get_question_errors(user["id"], question_id, db)

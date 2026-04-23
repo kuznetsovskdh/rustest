@@ -27,6 +27,7 @@ class Question(Base):
     id = Column(Integer, primary_key=True)
     test_id = Column(Integer, ForeignKey("tests.id"), nullable=False)
     text = Column(Text, nullable=False)
+    rule_id = Column(Integer, nullable=True)
     test = relationship("Test", back_populates="questions")
     options = relationship("Option", back_populates="question", cascade="all, delete")
 

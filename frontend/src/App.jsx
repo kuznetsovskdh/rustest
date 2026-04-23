@@ -10,10 +10,12 @@ import Analytics from "./pages/Analytics";
 import AdminPanel from "./pages/admin/AdminPanel";
 import TestConstructor from "./pages/admin/TestConstructor";
 import UserManager from "./pages/admin/UserManager";
+import RuleManager from "./pages/admin/RuleManager";
 import TeacherPanel from "./pages/TeacherPanel";
 import LinkTest from "./pages/LinkTest";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
+import Reference from "./pages/Reference";
 
 export default function App() {
   return (
@@ -32,10 +34,12 @@ export default function App() {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/admin/tests" element={<TestConstructor />} />
           <Route path="/admin/users" element={<UserManager />} />
+          <Route path="/admin/rules" element={<RuleManager />} />
           <Route path="/teacher" element={<TeacherPanel />} />
           <Route path="/link/:token" element={<LinkTest />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/reference" element={<Reference />} />
         </Routes>
       </div>
     </BrowserRouter>

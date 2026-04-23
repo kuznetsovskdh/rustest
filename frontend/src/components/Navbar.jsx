@@ -32,6 +32,7 @@ export default function Navbar() {
     <nav style={{ background: "#1a1a2e", padding: "1rem 2rem", display: "flex", gap: "1.5rem", alignItems: "center" }}>
       <Link to="/catalog" style={{ color: "#fff", fontWeight: "bold", textDecoration: "none" }}>Рустест</Link>
       <Link to="/catalog" style={{ color: "#ccc", textDecoration: "none" }}>Каталог</Link>
+      <Link to="/reference" style={{ color: "#ccc", textDecoration: "none" }}>Справочник</Link>
       {token && <Link to="/history" style={{ color: "#ccc", textDecoration: "none" }}>История</Link>}
       {token && <Link to="/analytics" style={{ color: "#ccc", textDecoration: "none" }}>Аналитика</Link>}
       {isTeacher && <Link to="/teacher" style={{ color: "#90caf9", textDecoration: "none" }}>Преподаватель</Link>}
@@ -40,9 +41,7 @@ export default function Navbar() {
         {token && (
           <Link to="/notifications" style={{ color: unread > 0 ? "#f44336" : "#ccc", textDecoration: "none", fontSize: 14, display: "flex", alignItems: "center", gap: "4px" }}>
             Уведомления
-            {unread > 0 && (
-              <span style={{ background: "#f44336", color: "white", borderRadius: 10, padding: "1px 7px", fontSize: 12 }}>{unread}</span>
-            )}
+            {unread > 0 && <span style={{ background: "#f44336", color: "white", borderRadius: 10, padding: "1px 7px", fontSize: 12 }}>{unread}</span>}
           </Link>
         )}
         {token && <Link to="/profile" style={{ color: "#ccc", textDecoration: "none", fontSize: 14 }}>Профиль</Link>}
