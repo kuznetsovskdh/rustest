@@ -115,7 +115,7 @@ export default function RuleManager() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
                 <h2 style={{ margin: 0 }}>{selected.title}</h2>
                 <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button onClick={() => startEdit(selected)} style={{ fontSize: 12 }}>✏️ Изменить</button>
+                  <button onClick={() => startEdit(selected)} style={{ fontSize: 12 }}>Изменить</button>
                   <button onClick={() => deleteRule(selected.id)} style={{ fontSize: 12, color: "#f44336", border: "1px solid #f44336", background: "none", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>Удалить</button>
                 </div>
               </div>

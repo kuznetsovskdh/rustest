@@ -127,10 +127,10 @@ export default function Reference() {
               <h3 style={{ margin: 0 }}>{selected.title}</h3>
               {isAdmin && (
                 <div style={{ display: "flex", gap: "0.5rem" }}>
-                  <button onClick={startEdit} style={{ fontSize: 12, padding: "4px 10px", cursor: "pointer" }}>✏️ Редактировать</button>
+                  <button onClick={startEdit} style={{ fontSize: 12, padding: "4px 10px", cursor: "pointer" }}>Редактировать</button>
                   <button onClick={() => setShowLinkModal(true)}
                     style={{ fontSize: 12, padding: "4px 10px", cursor: "pointer", background: "#e3f2fd", border: "1px solid #90caf9", color: "#1565c0", borderRadius: 4 }}>
-                    🔗 Привязать к вопросу
+                    Привязать к вопросу
                   </button>
                 </div>
               )}

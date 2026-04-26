@@ -12,29 +12,39 @@ export default function Analytics() {
   const [questionData, setQuestionData] = useState({});
   const [expandedRule, setExpandedRule] = useState(null);
   const [rules, setRules] = useState({});
+  const [testNames, setTestNames] = useState({});
 
   useEffect(() => {
     Promise.all([
       api.get("/analytics/progress"),
       api.get("/analytics/errors"),
       api.get("/analytics/recommendations"),
-    ]).then(([p, e, r]) => {
+    ]).then(async ([p, e, r]) => {
+      const errData = Array.isArray(e.data) ? e.data : [];
       setProgress(Array.isArray(p.data) ? p.data : []);
-      setErrors(Array.isArray(e.data) ? e.data : []);
+      setErrors(errData);
       setRecs(Array.isArray(r.data) ? r.data : []);
+      await Promise.all(errData.map(err => preloadQuestion(err.question_id)));
     }).finally(() => setLoading(false));
   }, []);
+
+  async function preloadQuestion(questionId) {
+    const [errRes, qRes] = await Promise.all([
+      api.get(`/analytics/question-errors/${questionId}`).catch(() => ({ data: [] })),
+      api.get(`/questions/${questionId}`).catch(() => ({ data: null }))
+    ]);
+    let testName = "";
+    if (qRes.data?.test_id) {
+      const t = await api.get(`/tests/${qRes.data.test_id}`).catch(() => ({ data: { title: "" } }));
+      testName = t.data.title;
+      setTestNames(prev => ({ ...prev, [qRes.data.test_id]: t.data.title }));
+    }
+    setQuestionData(prev => ({ ...prev, [questionId]: { errors: errRes.data, questionInfo: qRes.data || { id: questionId, text: "Вопрос удалён", options: [], rule_id: null }, testName } }));
+  }
 
   async function loadQuestionErrors(questionId) {
     if (expandedQ === questionId) { setExpandedQ(null); return; }
     setExpandedQ(questionId);
-    if (!questionData[questionId]) {
-      const [errRes, qRes] = await Promise.all([
-        api.get(`/analytics/question-errors/${questionId}`),
-        api.get(`/questions/${questionId}`).catch(() => ({ data: null }))
-      ]);
-      setQuestionData(prev => ({ ...prev, [questionId]: { errors: errRes.data, questionInfo: qRes.data } }));
-    }
   }
 
   async function loadRule(ruleId) {
@@ -53,7 +63,7 @@ export default function Analytics() {
       <button onClick={() => navigate(-1)} style={{ marginBottom: "1rem", background: "none", border: "none", cursor: "pointer", color: "#666" }}>← Назад</button>
       <h2>Моя аналитика</h2>
 
-      <h3>📈 Прогресс по датам</h3>
+      <h3>Прогресс по датам</h3>
       {progress.length === 0 ? <p style={{ color: "#999" }}>Нет данных</p> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "2rem" }}>
           {progress.map((p, i) => (
@@ -68,7 +78,7 @@ export default function Analytics() {
         </div>
       )}
 
-      <h3>❌ Сложные вопросы</h3>
+      <h3>Сложные вопросы</h3>
       {errors.length === 0 ? <p style={{ color: "#999" }}>Ошибок нет — отличный результат!</p> : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
           {errors.map((e, i) => {
@@ -79,7 +89,8 @@ export default function Analytics() {
               <div key={i} style={{ border: "1px solid #ffcdd2", borderRadius: 8, overflow: "hidden" }}>
                 <div style={{ padding: "0.75rem 1rem", background: "#fff3f3", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ flex: 1, marginRight: 8 }}>
-                    <span style={{ fontWeight: 500 }}>{q ? q.text : `Вопрос #${e.question_id}`}</span>
+                    {qd?.testName && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{qd.testName}</div>}
+                    <span style={{ fontWeight: 500 }}>{q ? q.text : `Загрузка...`}</span>
                     <span style={{ marginLeft: 8, color: "#f44336", fontSize: 13 }}>{e.error_rate}% ошибок</span>
                   </div>
                   <button onClick={() => loadQuestionErrors(e.question_id)}
@@ -92,42 +103,47 @@ export default function Analytics() {
                   <div style={{ padding: "0.75rem 1rem", borderTop: "1px solid #ffcdd2", background: "white" }}>
                     {correctOption && (
                       <div style={{ fontSize: 14, marginBottom: "0.75rem", padding: "6px 10px", background: "#e8f5e9", borderRadius: 6 }}>
-                        ✅ Правильный ответ: <strong>{correctOption.text}</strong>
+                        Правильный ответ: <strong>{correctOption.text}</strong>
                       </div>
                     )}
-
+                    {q?.options && (
+                      <div style={{ marginBottom: "0.75rem" }}>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: "#555", marginBottom: 6 }}>Все варианты ответов:</div>
+                        {q.options.map((o, j) => (
+                          <div key={j} style={{ fontSize: 13, padding: "4px 8px", borderRadius: 4, marginBottom: 2, background: o.is_correct ? "#e8f5e9" : "#f9f9f9", color: o.is_correct ? "#2e7d32" : "#333" }}>
+                            {o.is_correct ? "Верно: " : "Неверно: "}{o.text}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {qd.errors?.length > 0 && (
                       <div style={{ marginBottom: "0.75rem" }}>
                         <div style={{ fontSize: 13, fontWeight: 500, color: "#555", marginBottom: 6 }}>Ваши неверные ответы:</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-                          {qd.errors.map((err, j) => {
-                            const wrongOption = q?.options?.find(o => o.id === err.selected_option_id);
-                            return (
-                              <div key={j} style={{ fontSize: 13, padding: "6px 10px", background: "#ffebee", borderRadius: 4, display: "flex", justifyContent: "space-between" }}>
-                                <span>❌ {wrongOption ? wrongOption.text : `Вариант #${err.selected_option_id}`}</span>
-                                <span style={{ color: "#999" }}>{err.date}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        {qd.errors.map((err, j) => {
+                          const wrongOption = q?.options?.find(o => o.id === err.selected_option_id);
+                          return (
+                            <div key={j} style={{ fontSize: 13, padding: "6px 10px", background: "#ffebee", borderRadius: 4, marginBottom: 2, display: "flex", justifyContent: "space-between" }}>
+                              <span>Выбрано: {wrongOption ? wrongOption.text : `Вариант #${err.selected_option_id}`}</span>
+                              <span style={{ color: "#999" }}>{err.date}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
-
                     {q?.rule_id && (
                       <button onClick={() => loadRule(q.rule_id)}
                         style={{ fontSize: 12, padding: "4px 10px", cursor: "pointer", background: "#e3f2fd", border: "1px solid #90caf9", borderRadius: 4, color: "#1565c0" }}>
-                        📚 {expandedRule === q.rule_id ? "Скрыть правило" : "Посмотреть правило"}
+                        {expandedRule === q.rule_id ? "Скрыть правило" : "Посмотреть правило"}
                       </button>
                     )}
-
                     {expandedRule === q?.rule_id && rules[q?.rule_id] && (
                       <div style={{ marginTop: "0.75rem", padding: "0.75rem", background: "#f5f5f5", borderRadius: 6 }}>
                         <div style={{ fontWeight: 500, marginBottom: "0.5rem" }}>{rules[q.rule_id].title}</div>
                         <p style={{ fontSize: 13, lineHeight: 1.7, color: "#333", whiteSpace: "pre-line", margin: "0 0 0.5rem" }}>{rules[q.rule_id].explanation}</p>
                         {rules[q.rule_id].examples?.map((ex, j) => (
                           <div key={j} style={{ fontSize: 13, padding: "4px 8px", background: "white", borderRadius: 4, marginTop: 4 }}>
-                            <div style={{ color: "#2e7d32" }}>✓ {ex.correct}</div>
-                            {ex.incorrect && <div style={{ color: "#c62828" }}>✗ {ex.incorrect}</div>}
+                            <div style={{ color: "#2e7d32" }}>Правильно: {ex.correct}</div>
+                            {ex.incorrect && <div style={{ color: "#c62828" }}>Неправильно: {ex.incorrect}</div>}
                             {ex.comment && <div style={{ color: "#666" }}>{ex.comment}</div>}
                           </div>
                         ))}
@@ -141,12 +157,24 @@ export default function Analytics() {
         </div>
       )}
 
-      <h3>💡 Рекомендации</h3>
+      <h3>Рекомендации</h3>
       {recs.length === 0 ? <p style={{ color: "#999" }}>Всё отлично, продолжайте в том же духе!</p> : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-          {recs.map((r, i) => (
-            <div key={i} style={{ padding: "0.75rem", background: "#fff8e1", borderRadius: 6 }}>{r.message}</div>
-          ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          {recs.map((r, i) => {
+            const qd = questionData[r.question_id];
+            const q = qd?.questionInfo;
+            const errRate = r.message.match(/\((\d+\.?\d*)%\)/)?.[1];
+            return (
+              <div key={i} style={{ border: "1px solid #ffe082", borderRadius: 8, padding: "0.75rem 1rem", background: "#fff8e1" }}>
+                {qd?.testName && <div style={{ fontSize: 12, color: "#999", marginBottom: 2 }}>{qd.testName}</div>}
+                <div style={{ fontWeight: 500, marginBottom: 4 }}>{q ? q.text : "Загрузка..."}</div>
+                <div style={{ fontSize: 13, color: "#e65100" }}>
+                  {errRate && `${errRate}% ошибок — `}
+                  {r.message.includes("высокий") ? "рекомендуем повторить эту тему" : "стоит потренироваться"}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

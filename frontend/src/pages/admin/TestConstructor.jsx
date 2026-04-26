@@ -144,9 +144,9 @@ export default function TestConstructor() {
                   <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>{t.category} · {difficultyLabel[t.difficulty]}</div>
                 </div>
                 <div style={{ display: "flex", gap: "0.5rem", padding: "0.5rem 1rem", borderTop: "1px solid #f0f0f0", background: "#fafafa" }}>
-                  <button onClick={() => startEditTest(t)} style={{ fontSize: 12, padding: "3px 10px", cursor: "pointer" }}>✏️ Изменить</button>
+                  <button onClick={() => startEditTest(t)} style={{ fontSize: 12, padding: "3px 10px", cursor: "pointer" }}>Изменить</button>
                   <button onClick={() => togglePublish(t)} style={{ fontSize: 12, padding: "3px 10px", cursor: "pointer", background: t.is_published ? "#fff3e0" : "#e8f5e9", border: `1px solid ${t.is_published ? "#e65100" : "#2e7d32"}`, color: t.is_published ? "#e65100" : "#2e7d32", borderRadius: 4 }}>
-                    {t.is_published ? "🙈 Скрыть" : "✅ Опубликовать"}
+                    {t.is_published ? "Скрыть" : "Опубликовать"}
                   </button>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export default function TestConstructor() {
                           </div>
                         ))}
                         {q.rule_id
-                          ? <div style={{ fontSize: 12, color: "#1565c0", marginTop: 4 }}>📚 Правило #{q.rule_id}: {rules.find(r => r.id === q.rule_id)?.title}</div>
+                          ? <div style={{ fontSize: 12, color: "#1565c0", marginTop: 4 }}>Правило #{q.rule_id}: {rules.find(r => r.id === q.rule_id)?.title}</div>
                           : <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>Без правила</div>
                         }
                       </div>
@@ -184,13 +184,13 @@ export default function TestConstructor() {
               </div>
 
               <form onSubmit={saveQuestion} style={{ border: `1px solid ${editingQuestion ? "#1565c0" : "#ddd"}`, borderRadius: 8, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <h4 style={{ margin: 0 }}>{editingQuestion ? "✏️ Редактировать вопрос" : "Добавить вопрос"}</h4>
+                <h4 style={{ margin: 0 }}>{editingQuestion ? "Редактировать вопрос" : "Добавить вопрос"}</h4>
                 <textarea placeholder="Текст вопроса" required value={questionForm.text}
                   onChange={e => setQuestionForm({ ...questionForm, text: e.target.value })}
                   style={{ resize: "vertical", minHeight: 60, padding: "0.5rem" }} />
                 <select value={questionForm.rule_id} onChange={e => setQuestionForm({ ...questionForm, rule_id: e.target.value })}
                   style={{ padding: "0.5rem", borderRadius: 6, border: "1px solid #ddd" }}>
-                  <option value="">📚 Без правила</option>
+                  <option value="">Без правила</option>
                   {rules.map(r => <option key={r.id} value={r.id}>{r.title}</option>)}
                 </select>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>

@@ -11,6 +11,7 @@ import AdminPanel from "./pages/admin/AdminPanel";
 import TestConstructor from "./pages/admin/TestConstructor";
 import UserManager from "./pages/admin/UserManager";
 import RuleManager from "./pages/admin/RuleManager";
+import ProductAnalytics from "./pages/admin/ProductAnalytics";
 import TeacherPanel from "./pages/TeacherPanel";
 import LinkTest from "./pages/LinkTest";
 import Notifications from "./pages/Notifications";
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/admin/tests" element={<TestConstructor />} />
           <Route path="/admin/users" element={<UserManager />} />
           <Route path="/admin/rules" element={<RuleManager />} />
+          <Route path="/admin/product-analytics" element={<ProductAnalytics />} />
           <Route path="/teacher" element={<TeacherPanel />} />
           <Route path="/link/:token" element={<LinkTest />} />
           <Route path="/notifications" element={<Notifications />} />

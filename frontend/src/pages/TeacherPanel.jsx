@@ -99,7 +99,7 @@ export default function TeacherPanel() {
           <button key={t} onClick={() => setTab(t)}
             style={{ background: "none", border: "none", cursor: "pointer", fontWeight: tab === t ? 600 : 400,
               borderBottom: tab === t ? "2px solid #1a1a2e" : "none", paddingBottom: "0.25rem", color: tab === t ? "#1a1a2e" : "#666" }}>
-            {t === "links" ? "📋 Тесты и ссылки" : `👥 Мои ученики (${students.length})`}
+            {t === "links" ? "Тесты и ссылки" : `Мои ученики (${students.length})`}
           </button>
         ))}
       </div>
@@ -137,7 +137,7 @@ export default function TeacherPanel() {
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
                     <button onClick={() => addStudent(u.id)} style={{ fontSize: 12, background: "#e8f5e9", border: "1px solid #2e7d32", color: "#2e7d32", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>+ Добавить</button>
-                    <button onClick={() => inviteStudent(u.id)} style={{ fontSize: 12, background: "#e3f2fd", border: "1px solid #1565c0", color: "#1565c0", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>✉️ Пригласить</button>
+                    <button onClick={() => inviteStudent(u.id)} style={{ fontSize: 12, background: "#e3f2fd", border: "1px solid #1565c0", color: "#1565c0", borderRadius: 4, padding: "3px 8px", cursor: "pointer" }}>Пригласить</button>
                   </div>
                 </div>
               ))}
@@ -178,10 +178,10 @@ export default function TeacherPanel() {
                     <div style={{ fontSize: 12, color: "#999", fontFamily: "monospace" }}>/link/{link.token}</div>
                   </div>
                   <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <button onClick={() => copyLink(link.token)} style={{ fontSize: 12 }}>📋 Копировать</button>
+                    <button onClick={() => copyLink(link.token)} style={{ fontSize: 12 }}>Копировать</button>
                     <button onClick={() => { setShowInviteModal(true); setInviteSelected(students.map(s => s.id)); }}
                       style={{ fontSize: 12, background: "#e3f2fd", border: "1px solid #1565c0", color: "#1565c0", borderRadius: 4, padding: "3px 10px", cursor: "pointer" }}>
-                      ✉️ Пригласить
+                      Пригласить
                     </button>
                   </div>
                 </div>
