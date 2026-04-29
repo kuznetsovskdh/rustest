@@ -54,7 +54,7 @@ export default function Notifications() {
               <div>
                 {n.type === "invite_student" && (
                   <>
-                    <div style={{ fontWeight: 500 }}>👋 Приглашение от преподавателя</div>
+                    <div style={{ fontWeight: 500 }}>Приглашение от преподавателя</div>
                     <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
                       {n.payload?.split(":")?.[1] || "Преподаватель"} приглашает вас стать учеником
                     </div>
@@ -62,7 +62,7 @@ export default function Notifications() {
                 )}
                 {n.type === "invite_test" && (
                   <>
-                    <div style={{ fontWeight: 500 }}>📝 Приглашение пройти тест</div>
+                    <div style={{ fontWeight: 500 }}>Приглашение пройти тест</div>
                     <div style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
                       Тест: {n.payload?.split(":")?.[1] || ""}
                     </div>

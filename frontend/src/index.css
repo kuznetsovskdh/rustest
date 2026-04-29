@@ -1,0 +1,170 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+
+  /* Ink */
+  --ink-900: #1a1917;
+  --ink-600: #6b6860;
+  --ink-400: #a8a49e;
+  --ink-200: #d4d0cb;
+
+  /* Paper */
+  --paper-100: #fafaf8;
+  --paper-200: #f2efe9;
+  --paper-300: #e8e4dd;
+
+  /* Accent — deep navy */
+  --accent: #1a1a2e;
+  --accent-hover: #252545;
+
+  /* Status */
+  --green: #16a34a;
+  --amber: #d97706;
+  --red: #dc2626;
+  --blue: #1d4ed8;
+
+  /* Aliases */
+  --color-ink: var(--ink-900);
+  --color-ink-secondary: var(--ink-600);
+  --color-ink-tertiary: var(--ink-400);
+  --color-paper: var(--paper-100);
+  --color-paper-secondary: var(--paper-200);
+  --color-border: var(--paper-300);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --shadow-sm: 0 1px 3px rgba(26,25,23,0.06), 0 1px 2px rgba(26,25,23,0.04);
+  --shadow-md: 0 4px 16px rgba(26,25,23,0.09), 0 2px 4px rgba(26,25,23,0.05);
+  --shadow-lg: 0 8px 32px rgba(26,25,23,0.12);
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  line-height: 1.6;
+  font-weight: 300;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem); }
+h3 { font-size: clamp(1rem, 2vw, 1.25rem); }
+
+a { color: inherit; text-decoration: none; }
+
+input, textarea, select {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 300;
+  color: var(--color-ink);
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.875rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(26,26,46,0.08);
+}
+
+button {
+  font-family: var(--font-sans);
+  font-size: 0.825rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  background: white;
+  color: var(--color-ink);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1rem;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+button:hover:not(:disabled) {
+  background: var(--paper-200);
+  border-color: var(--ink-200);
+}
+button:active:not(:disabled) {
+  transform: translateY(1px);
+  background: var(--paper-300);
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+button.primary {
+  background: var(--accent);
+  color: var(--paper-100);
+  border-color: var(--accent);
+}
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+button.danger {
+  background: white;
+  color: var(--red);
+  border-color: #fecaca;
+}
+button.danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+button.success {
+  background: white;
+  color: var(--green);
+  border-color: #bbf7d0;
+}
+button.success:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+
+/* Tags */
+.tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+.tag-green { background: #f0fdf4; color: var(--green); border: 1px solid #bbf7d0; }
+.tag-amber { background: #fffbeb; color: var(--amber); border: 1px solid #fde68a; }
+.tag-red   { background: #fef2f2; color: var(--red);   border: 1px solid #fecaca; }
+.tag-blue  { background: #eff6ff; color: var(--blue);  border: 1px solid #bfdbfe; }
+.tag-gray  { background: var(--paper-200); color: var(--ink-600); border: 1px solid var(--color-border); }
+
+/* Cards */
+.card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card-interactive {
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: pointer;
+}
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.card-interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}

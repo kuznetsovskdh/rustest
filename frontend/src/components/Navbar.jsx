@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api/client";
 
@@ -9,11 +9,19 @@ function parseToken(token) {
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
   const payload = token ? parseToken(token) : null;
   const isAdmin = payload?.role === "admin";
   const isTeacher = payload?.role === "teacher" || isAdmin;
   const [unread, setUnread] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (!token) return;
@@ -28,26 +36,87 @@ export default function Navbar() {
     navigate("/login");
   }
 
+  const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + "/");
+
   return (
-    <nav style={{ background: "#1a1a2e", padding: "1rem 2rem", display: "flex", gap: "1.5rem", alignItems: "center" }}>
-      <Link to="/catalog" style={{ color: "#fff", fontWeight: "bold", textDecoration: "none" }}>Рустест</Link>
-      <Link to="/catalog" style={{ color: "#ccc", textDecoration: "none" }}>Каталог</Link>
-      <Link to="/reference" style={{ color: "#ccc", textDecoration: "none" }}>Справочник</Link>
-      {token && <Link to="/history" style={{ color: "#ccc", textDecoration: "none" }}>История</Link>}
-      {token && <Link to="/analytics" style={{ color: "#ccc", textDecoration: "none" }}>Аналитика</Link>}
-      {isTeacher && <Link to="/teacher" style={{ color: "#90caf9", textDecoration: "none" }}>Преподаватель</Link>}
-      {isAdmin && <Link to="/admin" style={{ color: "#f0c040", textDecoration: "none" }}>Админ</Link>}
-      <div style={{ marginLeft: "auto", display: "flex", gap: "1rem", alignItems: "center" }}>
-        {token && (
-          <Link to="/notifications" style={{ color: unread > 0 ? "#f44336" : "#ccc", textDecoration: "none", fontSize: 14, display: "flex", alignItems: "center", gap: "4px" }}>
-            Уведомления
-            {unread > 0 && <span style={{ background: "#f44336", color: "white", borderRadius: 10, padding: "1px 7px", fontSize: 12 }}>{unread}</span>}
-          </Link>
-        )}
-        {token && <Link to="/profile" style={{ color: "#ccc", textDecoration: "none", fontSize: 14 }}>Профиль</Link>}
-        {token
-          ? <button onClick={logout} style={{ cursor: "pointer" }}>Выйти</button>
-          : <Link to="/login" style={{ color: "#ccc", textDecoration: "none" }}>Войти</Link>}
+    <nav style={{
+      position: "sticky", top: 0, zIndex: 100,
+      background: scrolled ? "rgba(250,250,248,0.92)" : "var(--color-paper)",
+      backdropFilter: scrolled ? "blur(12px)" : "none",
+      borderBottom: `1px solid ${scrolled ? "var(--color-border)" : "transparent"}`,
+      transition: "all 0.2s",
+      padding: "0 2rem",
+    }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", height: 60 }}>
+        <Link to="/catalog" style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", fontWeight: 400, letterSpacing: "-0.01em", marginRight: "2.5rem" }}>
+          Рустест
+        </Link>
+
+        <div style={{ display: "flex", gap: "0.25rem", flex: 1 }}>
+          {[
+            { to: "/catalog", label: "Каталог" },
+            { to: "/reference", label: "Справочник" },
+            ...(token ? [{ to: "/history", label: "История" }, { to: "/analytics", label: "Аналитика" }] : []),
+            ...(isTeacher ? [{ to: "/teacher", label: "Преподаватель" }] : []),
+          ].map(item => (
+            <Link key={item.to} to={item.to} style={{
+              fontSize: "0.85rem",
+              fontWeight: 400,
+              padding: "0.4rem 0.85rem",
+              borderRadius: "var(--radius-sm)",
+              color: isActive(item.to) ? "var(--color-ink)" : "var(--color-ink-secondary)",
+              background: isActive(item.to) ? "var(--color-paper-secondary)" : "transparent",
+              transition: "all 0.15s",
+            }}>
+              {item.label}
+            </Link>
+          ))}
+          {isAdmin && (
+            <Link to="/admin" style={{
+              fontSize: "0.85rem",
+              fontWeight: 400,
+              padding: "0.4rem 0.85rem",
+              borderRadius: "var(--radius-sm)",
+              color: isActive("/admin") ? "var(--color-ink)" : "var(--color-ink-secondary)",
+              background: isActive("/admin") ? "var(--color-paper-secondary)" : "transparent",
+            }}>
+              Админ
+            </Link>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+          {token && (
+            <Link to="/notifications" style={{
+              fontSize: "0.85rem",
+              padding: "0.4rem 0.85rem",
+              borderRadius: "var(--radius-sm)",
+              color: unread > 0 ? "var(--color-ink)" : "var(--color-ink-secondary)",
+              position: "relative",
+            }}>
+              Уведомления
+              {unread > 0 && (
+                <span style={{
+                  position: "absolute", top: 2, right: 2,
+                  background: "var(--color-ink)", color: "var(--color-paper)",
+                  borderRadius: "50%", width: 16, height: 16,
+                  fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  {unread}
+                </span>
+              )}
+            </Link>
+          )}
+          {token && (
+            <Link to="/profile" style={{ fontSize: "0.85rem", padding: "0.4rem 0.85rem", borderRadius: "var(--radius-sm)", color: "var(--color-ink-secondary)" }}>
+              Профиль
+            </Link>
+          )}
+          {token
+            ? <button onClick={logout} style={{ fontSize: "0.85rem" }}>Выйти</button>
+            : <Link to="/login"><button className="primary">Войти</button></Link>
+          }
+        </div>
       </div>
     </nav>
   );

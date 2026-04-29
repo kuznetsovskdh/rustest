@@ -93,7 +93,7 @@ export default function UserManager() {
                   <button onClick={() => toggleFreeze(u.id)} disabled={saving === u.id + "_freeze"}
                     style={{ fontSize: 12, padding: "3px 10px", cursor: "pointer", borderRadius: 4, border: "none",
                       background: u.is_frozen ? "#e8f5e9" : "#fff3e0", color: u.is_frozen ? "#2e7d32" : "#e65100" }}>
-                    {u.is_frozen ? "🔓 Разморозить" : "🔒 Заморозить"}
+                    {u.is_frozen ? "Разморозить" : "Заморозить"}
                   </button>
                 )}
               </td>
