@@ -8,6 +8,7 @@ from app.models import Attempt, Answer, EventLog, EventTypeEnum
 from app.schemas import StartAttemptRequest, FinishAttemptRequest, AttemptResponse
 from app import analytics
 import os
+from pydantic import BaseModel
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Result Service", redirect_slashes=False)
@@ -33,6 +34,15 @@ def require_teacher(user=Depends(get_user)):
     if user["role"] not in ("admin", "teacher"):
         raise HTTPException(status_code=403, detail="Teacher or admin only")
     return user
+
+class RegisteredEventRequest(BaseModel):
+    user_id: int
+
+@app.post("/events/registered")
+def log_registered_event(data: RegisteredEventRequest, db: Session = Depends(get_db)):
+    db.add(EventLog(user_id=data.user_id, event_type=EventTypeEnum.registered))
+    db.commit()
+    return {"ok": True}
 
 @app.post("/attempts/start", response_model=AttemptResponse)
 def start_attempt(data: StartAttemptRequest, user=Depends(get_user), db: Session = Depends(get_db)):
@@ -140,6 +150,27 @@ def score_distribution(user=Depends(require_admin), db: Session = Depends(get_db
 @app.get("/analytics/dropoff")
 def dropoff(user=Depends(require_admin), db: Session = Depends(get_db)):
     return analytics.get_dropoff(db)
+
+@app.get("/analytics/cohort-retention")
+def cohort_retention(user=Depends(require_admin), db: Session = Depends(get_db)):
+    return analytics.get_cohort_retention(db)
+
+@app.get("/analytics/activation-funnel")
+def activation_funnel(user=Depends(require_admin), db: Session = Depends(get_db)):
+    return analytics.get_activation_funnel(db)
+
+@app.get("/analytics/churn-risk")
+def churn_risk(days: int = 14, student_ids: str = "", user=Depends(require_teacher), db: Session = Depends(get_db)):
+    ids = [int(i) for i in student_ids.split(",") if i.strip().isdigit()]
+    return analytics.get_churn_risk_users(db, days_threshold=days, user_ids=ids if ids else None)
+
+@app.get("/analytics/funnel-by-test-segmented")
+def funnel_by_test_segmented(segment_by: str = None, user=Depends(require_admin), db: Session = Depends(get_db)):
+    return analytics.get_funnel_by_test_segmented(db, segment_by=segment_by)
+
+@app.get("/analytics/dropoff-segmented")
+def dropoff_segmented(segment_by: str = None, user=Depends(require_admin), db: Session = Depends(get_db)):
+    return analytics.get_dropoff_segmented(db, segment_by=segment_by)
 
 @app.get("/attempts/my/detailed")
 def my_attempts_detailed(user=Depends(get_user), db: Session = Depends(get_db)):

@@ -6,6 +6,8 @@ from app.database import Base, engine, get_db
 from app.models import User, RoleEnum, TeacherStudent, Notification
 from app.schemas import RegisterRequest, LoginRequest, TokenResponse, UserResponse
 from app.auth import hash_password, verify_password, create_token, get_current_user
+import httpx
+import os
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Auth Service", redirect_slashes=False)
@@ -39,6 +41,11 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
+    try:
+        httpx.post(f"{os.getenv('RESULT_SERVICE_URL', 'http://result-service:8000')}/events/registered",
+                   json={"user_id": user.id}, timeout=3)
+    except Exception:
+        pass
     return {"access_token": create_token({"sub": str(user.id), "role": user.role})}
 
 @app.post("/auth/login", response_model=TokenResponse)

@@ -7,12 +7,14 @@ export default function ProductAnalytics() {
   const [data, setData] = useState({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [segmentBy, setSegmentBy] = useState("none");
+  const [segmentedFunnel, setSegmentedFunnel] = useState([]);
   const [questions, setQuestions] = useState({});
   const [testNames, setTestNames] = useState({});
 
   const load = useCallback(async () => {
     setRefreshing(true);
-    const [f, r, d, a, dm, fbt, sd, doff] = await Promise.all([
+    const [f, r, d, a, dm, fbt, sd, doff, cohort, actFunnel] = await Promise.all([
       api.get("/analytics/funnel"),
       api.get("/analytics/retention"),
       api.get("/analytics/question-difficulty"),
@@ -21,6 +23,8 @@ export default function ProductAnalytics() {
       api.get("/analytics/funnel-by-test"),
       api.get("/analytics/score-distribution"),
       api.get("/analytics/dropoff"),
+      api.get("/analytics/cohort-retention"),
+      api.get("/analytics/activation-funnel"),
     ]);
     setData({
       funnel: f.data, retention: r.data, difficulty: d.data,
@@ -29,12 +33,21 @@ export default function ProductAnalytics() {
       funnelByTest: Array.isArray(fbt.data) ? fbt.data : [],
       scoreDist: sd.data,
       dropoff: Array.isArray(doff.data) ? doff.data : [],
+      cohortRetention: Array.isArray(cohort.data) ? cohort.data : [],
+      activationFunnel: actFunnel.data,
     });
     setLoading(false);
     setRefreshing(false);
   }, []);
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (segmentBy === "none") { setSegmentedFunnel([]); return; }
+    api.get(`/analytics/funnel-by-test-segmented?segment_by=${segmentBy}`)
+      .then(r => setSegmentedFunnel(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setSegmentedFunnel([]));
+  }, [segmentBy]);
 
   async function loadQuestion(qId) {
     if (questions[qId]) return;
@@ -89,7 +102,7 @@ export default function ProductAnalytics() {
 
   if (loading) return <p>Загрузка...</p>;
 
-  const { funnel, retention, difficulty, activity, dauMau, funnelByTest, scoreDist, dropoff } = data;
+  const { funnel, retention, difficulty, activity, dauMau, funnelByTest, scoreDist, dropoff, cohortRetention, activationFunnel } = data;
   const maxActivity = Math.max(...activity.map(a => a.count), 1);
   const maxDauHistory = Math.max(...(dauMau?.dau_history || []).map(d => d.users), 1);
   const maxDist = Math.max(...(scoreDist?.distribution || []).map(d => d.count), 1);
@@ -193,6 +206,37 @@ export default function ProductAnalytics() {
       {funnelByTest.length > 0 && (
         <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: "1.25rem", marginBottom: "1.5rem" }}>
           <h3 style={{ margin: "0 0 1rem" }}>Воронка по тестам</h3>
+          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1rem", alignItems: "center" }}>
+            <span style={{ fontSize: 13, color: "#666" }}>Сегмент:</span>
+            {[
+              { value: "none", label: "Все" },
+              { value: "role", label: "По роли" },
+              { value: "has_teacher", label: "С учителем / самостоятельно" },
+            ].map(opt => (
+              <button key={opt.value} onClick={() => setSegmentBy(opt.value)}
+                style={{ fontSize: 12, padding: "0.3rem 0.75rem", borderRadius: 20,
+                  background: segmentBy === opt.value ? "#1a1a2e" : "white",
+                  color: segmentBy === opt.value ? "white" : "#333",
+                  border: "1px solid #ddd", cursor: "pointer" }}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          {segmentBy !== "none" && segmentedFunnel.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
+              {segmentedFunnel.map((row, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                  <span style={{ width: 180, fontSize: 13, color: "#333" }}>
+                    {testNames[row.test_id] || `Тест #${row.test_id}`} · <b>{row.segment}</b>
+                  </span>
+                  <div style={{ flex: 1, background: "#f0f0f0", borderRadius: 4, height: 20 }}>
+                    <div style={{ width: `${row.conversion}%`, background: row.conversion >= 70 ? "#2e7d32" : "#c62828", height: "100%", borderRadius: 4 }} />
+                  </div>
+                  <span style={{ minWidth: 110, fontSize: 13, fontWeight: 500, textAlign: "right" }}>{row.conversion}% ({row.started}→{row.finished})</span>
+                </div>
+              ))}
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {funnelByTest.map((t, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -254,6 +298,65 @@ export default function ProductAnalytics() {
           )}
         </div>
       </div>
+
+      {activationFunnel && (
+        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <h3 style={{ margin: "0 0 1rem" }}>Activation Funnel</h3>
+          {[
+            { label: "Зарегистрировался", value: activationFunnel.registered },
+            { label: "Начал первый тест", value: activationFunnel.started_first_test },
+            { label: "Закончил первый тест", value: activationFunnel.finished_first_test },
+            { label: "Вернулся за 7 дней", value: activationFunnel.returned_7d },
+          ].map((s, i) => {
+            const base = activationFunnel.registered || 1;
+            const pct = Math.round((s.value / base) * 100);
+            return (
+              <div key={i} style={{ marginBottom: "0.75rem" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 4 }}>
+                  <span>{s.label}</span><span style={{ fontWeight: 500 }}>{s.value} ({pct}%)</span>
+                </div>
+                <div style={{ background: "#f0f0f0", borderRadius: 4, height: 20 }}>
+                  <div style={{ width: `${pct}%`, background: i === 0 ? "#1a1a2e" : pct >= 50 ? "#2e7d32" : "#c62828", height: "100%", borderRadius: 4 }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {cohortRetention && cohortRetention.length > 0 && (
+        <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <h3 style={{ margin: "0 0 1rem" }}>Cohort Retention (по неделе регистрации)</h3>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ textAlign: "left" }}>
+                <th style={{ padding: "0.5rem" }}>Когорта</th>
+                <th style={{ padding: "0.5rem" }}>Размер</th>
+                {["W0","W1","W2","W3","W4"].map(w => (
+                  <th key={w} style={{ padding: "0.5rem", textAlign: "center" }}>{w}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {cohortRetention.map((c, i) => (
+                <tr key={i} style={{ borderTop: "1px solid #eee" }}>
+                  <td style={{ padding: "0.5rem" }}>{c.cohort_week}</td>
+                  <td style={{ padding: "0.5rem" }}>{c.cohort_size}</td>
+                  {["W0","W1","W2","W3","W4"].map(w => {
+                    const val = c[w];
+                    const bg = val >= 50 ? "#c8e6c9" : val >= 20 ? "#fff9c4" : val > 0 ? "#ffe0b2" : "#f5f5f5";
+                    return (
+                      <td key={w} style={{ padding: "0.5rem", textAlign: "center", background: bg }}>
+                        {val}%
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {dropoff.length > 0 && (
         <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: "1.25rem", marginBottom: "1.5rem" }}>

@@ -5,6 +5,7 @@ from datetime import datetime
 import enum
 
 class EventTypeEnum(str, enum.Enum):
+    registered = "registered"
     start_test = "start_test"
     answer_question = "answer_question"
     finish_test = "finish_test"

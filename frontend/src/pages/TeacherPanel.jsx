@@ -18,12 +18,21 @@ export default function TeacherPanel() {
   const [tab, setTab] = useState("links");
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteSelected, setInviteSelected] = useState([]);
+  const [churnRisk, setChurnRisk] = useState([]);
 
   useEffect(() => {
     api.get("/tests").then(r => setTests(Array.isArray(r.data) ? r.data : []));
     api.get("/auth/students").then(r => setStudents(Array.isArray(r.data) ? r.data : []));
     api.get("/auth/students/all").then(r => setAllUsers(Array.isArray(r.data) ? r.data : []));
   }, []);
+
+  useEffect(() => {
+    if (students.length === 0) { setChurnRisk([]); return; }
+    const ids = students.map(s => s.id).join(",");
+    api.get(`/analytics/churn-risk?student_ids=${ids}`)
+      .then(r => setChurnRisk(Array.isArray(r.data) ? r.data : []))
+      .catch(() => setChurnRisk([]));
+  }, [students]);
 
   function showMsg(msg) { setMessage(msg); setTimeout(() => setMessage(""), 2500); }
 
@@ -105,6 +114,7 @@ export default function TeacherPanel() {
       </div>
 
       {tab === "students" && (
+        <>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
           <div>
             <h3>Мои ученики ({filteredStudents.length})</h3>
@@ -144,8 +154,31 @@ export default function TeacherPanel() {
             </div>
           </div>
         </div>
-      )}
 
+        {churnRisk.length > 0 && (
+          <div style={{ marginTop: "1.5rem", border: "1px solid #ffcc80", borderRadius: 8, padding: "1.25rem", background: "#fff8e1" }}>
+            <h3 style={{ margin: "0 0 1rem", color: "#e65100" }}>&#9888; Риск оттока ({churnRisk.length})</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {churnRisk.map(c => {
+                const stu = students.find(s => s.id === c.user_id);
+                return (
+                  <div key={c.user_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0.6rem 0.75rem", background: "white", borderRadius: 6, border: "1px solid #ffe0b2" }}>
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{stu?.name || `Ученик #${c.user_id}`}</div>
+                      <div style={{ fontSize: 12, color: "#666" }}>{stu?.email}</div>
+                    </div>
+                    <div style={{ fontSize: 13, color: "#e65100" }}>
+                      {c.days_inactive} дней без активности
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        </>
+      )}
       {tab === "links" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "2rem" }}>
           <div>

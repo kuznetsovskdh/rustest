@@ -17,6 +17,7 @@ class User(Base):
     name = Column(String, nullable=False)
     role = Column(Enum(RoleEnum), default=RoleEnum.user)
     is_frozen = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 class TeacherStudent(Base):
     __tablename__ = "teacher_students"
