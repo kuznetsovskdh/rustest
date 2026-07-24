@@ -29,6 +29,7 @@ class AttemptResponse(BaseModel):
     started_at: datetime
     finished_at: Optional[datetime]
     answers: List[AnswerResponse] = []
+    eh_variant_id: Optional[int] = None
     class Config:
         from_attributes = True
 

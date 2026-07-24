@@ -10,12 +10,14 @@ services:
       test: ["CMD-SHELL", "pg_isready -U rutest"]
       interval: 5s
       retries: 5
-
+    networks:
+      - eh_network
   redis:
     image: redis:7
     ports:
       - "6379:6379"
-
+    networks:
+      - eh_network
   auth-service:
     build: ./services/auth-service
     env_file: .env
@@ -24,7 +26,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
+    networks:
+      - eh_network
   test-service:
     build: ./services/test-service
     env_file: .env
@@ -33,7 +36,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
+    networks:
+      - eh_network
   result-service:
     build: ./services/result-service
     env_file: .env
@@ -42,7 +46,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
+    environment:
+      EH_BASE_URL: http://experimenthub-app-1:8000
+      EH_EXPERIMENT_ID: "2"
+    networks:
+      - eh_network
   reference-service:
     build: ./services/reference-service
     env_file: .env
@@ -51,7 +59,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
+    networks:
+      - eh_network
   frontend:
     build: ./frontend
     ports:
@@ -61,6 +70,12 @@ services:
       - test-service
       - result-service
       - reference-service
+    networks:
+      - eh_network
+
+networks:
+  eh_network:
+    external: true
 
 volumes:
   postgres_data:
