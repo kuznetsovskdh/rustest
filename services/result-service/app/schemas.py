@@ -30,6 +30,7 @@ class AttemptResponse(BaseModel):
     finished_at: Optional[datetime]
     answers: List[AnswerResponse] = []
     eh_variant_id: Optional[int] = None
+    eh_variant_name: Optional[str] = None
     class Config:
         from_attributes = True
 

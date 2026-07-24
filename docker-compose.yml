@@ -1,5 +1,5 @@
 services:
-  postgres:
+  postgres-rustest:
     image: postgres:16
     env_file: .env
     volumes:
@@ -12,55 +12,69 @@ services:
       retries: 5
     networks:
       - eh_network
+
   redis:
     image: redis:7
     ports:
       - "6379:6379"
     networks:
       - eh_network
+
   auth-service:
     build: ./services/auth-service
     env_file: .env
+    environment:
+      AUTH_DB_URL: postgresql://rutest:rutest_local_pass@postgres-rustest:5432/rutest
     ports:
       - "8011:8000"
     depends_on:
-      postgres:
+      postgres-rustest:
         condition: service_healthy
     networks:
       - eh_network
+
   test-service:
     build: ./services/test-service
     env_file: .env
+    environment:
+      TEST_DB_URL: postgresql://rutest:rutest_local_pass@postgres-rustest:5432/rutest
     ports:
       - "8002:8000"
     depends_on:
-      postgres:
+      postgres-rustest:
         condition: service_healthy
     networks:
       - eh_network
+
   result-service:
     build: ./services/result-service
     env_file: .env
+    environment:
+      RESULT_DB_URL: postgresql://rutest:rutest_local_pass@postgres-rustest:5432/rutest
+      EH_BASE_URL: http://experimenthub-app-1:8000
+      EH_EXPERIMENT_ID: "2"
     ports:
       - "8003:8000"
     depends_on:
-      postgres:
+      postgres-rustest:
         condition: service_healthy
-    environment:
-      EH_BASE_URL: http://experimenthub-app-1:8000
-      EH_EXPERIMENT_ID: "2"
+    restart: on-failure
     networks:
       - eh_network
+
   reference-service:
     build: ./services/reference-service
     env_file: .env
+    environment:
+      REFERENCE_DB_URL: postgresql://rutest:rutest_local_pass@postgres-rustest:5432/rutest
     ports:
       - "8004:8000"
     depends_on:
-      postgres:
+      postgres-rustest:
         condition: service_healthy
     networks:
       - eh_network
+
   frontend:
     build: ./frontend
     ports:
