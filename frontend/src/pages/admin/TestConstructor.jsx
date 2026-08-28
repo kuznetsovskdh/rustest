@@ -191,10 +191,10 @@ export default function TestConstructor() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontWeight: 400, fontSize: "0.9rem", marginBottom: "0.5rem" }}>{i + 1}. {q.text}</p>
-                        <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
                           {q.options?.map(o => (
-                            <span key={o.id} style={{ fontSize: "0.8rem", color: o.is_correct ? "var(--green)" : "var(--ink-600)" }}>
-                              {o.is_correct ? "✓" : "○"} {o.text}
+                            <span key={o.id} style={{ fontSize: "0.8rem", lineHeight: 1.6, color: o.is_correct ? "var(--green)" : "var(--ink-600)" }}>
+                              {o.text}{o.is_correct && <span className="tag tag-green" style={{ marginLeft: "0.5rem" }}>верный</span>}
                             </span>
                           ))}
                         </div>
@@ -233,7 +233,7 @@ export default function TestConstructor() {
                         <input placeholder={`Вариант ${i + 1}`} required value={o.text} onChange={e => updateOption(i, "text", e.target.value)} />
                         <button type="button" className="danger" onClick={() => {
                           if (questionForm.options.length > 2) setQuestionForm({ ...questionForm, options: questionForm.options.filter((_, idx) => idx !== i) });
-                        }} style={{ padding: "0.3rem 0.6rem", flexShrink: 0 }}>✕</button>
+                        }} style={{ padding: "0.3rem 0.6rem", flexShrink: 0 }}>Убрать</button>
                       </div>
                     ))}
                   </div>

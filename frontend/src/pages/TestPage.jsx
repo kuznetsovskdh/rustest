@@ -15,6 +15,12 @@ export default function TestPage() {
   const [hintDismissed, setHintDismissed] = useState(false);
 
   useEffect(() => {
+    // Без аккаунта попытку создать нельзя (attempts/start отдаёт 401), поэтому
+    // не пускаем в тест вообще — иначе человек прошёл бы его впустую.
+    if (!localStorage.getItem("token")) {
+      navigate(`/login?next=${encodeURIComponent(`/test/${id}`)}`, { replace: true });
+      return;
+    }
     api.get(`/tests/${id}`).then(r => {
       setTest(r.data);
       setTimeLeft(r.data.timer_seconds);

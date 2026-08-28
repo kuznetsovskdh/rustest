@@ -29,10 +29,10 @@ export default function RuleManager() {
     e.preventDefault();
     if (editMode && selected) {
       await api.put(`/rules/${selected.id}`, form);
-      showMsg("Правило обновлено ✓");
+      showMsg("Правило обновлено");
     } else {
       await api.post("/rules", form);
-      showMsg("Правило добавлено ✓");
+      showMsg("Правило добавлено");
     }
     await loadRules();
     setShowForm(false);
@@ -126,8 +126,8 @@ export default function RuleManager() {
                   <h4>Примеры</h4>
                   {selected.examples.map((ex, i) => (
                     <div key={i} style={{ background: "#f9f9f9", borderRadius: 6, padding: "0.75rem", marginBottom: "0.5rem" }}>
-                      <div style={{ color: "#2e7d32" }}>✓ {ex.correct}</div>
-                      {ex.incorrect && <div style={{ color: "#c62828" }}>✗ {ex.incorrect}</div>}
+                      <div style={{ color: "#2e7d32" }}>Верно: {ex.correct}</div>
+                      {ex.incorrect && <div style={{ color: "#c62828" }}>Неверно: {ex.incorrect}</div>}
                       {ex.comment && <div style={{ fontSize: 13, color: "#666" }}>{ex.comment}</div>}
                     </div>
                   ))}

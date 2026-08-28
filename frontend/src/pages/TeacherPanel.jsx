@@ -54,19 +54,19 @@ export default function TeacherPanel() {
     const r = await api.post(`/tests/${selected.id}/links?label=${encodeURIComponent(label)}`);
     setLink(r.data);
     setLabel("");
-    showMsg("Ссылка создана ✓");
+    showMsg("Ссылка создана");
   }
 
   function copyLink(token) {
     navigator.clipboard.writeText(`${window.location.origin}/link/${token}`);
-    showMsg("Ссылка скопирована ✓");
+    showMsg("Ссылка скопирована");
   }
 
   async function addStudent(userId) {
     await api.post(`/auth/students/${userId}`);
     const user = allUsers.find(u => u.id === userId);
     setStudents([...students, user]);
-    showMsg("Ученик добавлен ✓");
+    showMsg("Ученик добавлен");
   }
 
   async function removeStudent(userId) {
@@ -77,7 +77,7 @@ export default function TeacherPanel() {
 
   async function inviteStudent(userId) {
     await api.post(`/auth/notifications/invite-student/${userId}`);
-    showMsg("Приглашение отправлено ✓");
+    showMsg("Приглашение отправлено");
   }
 
   async function sendTestInvites() {
@@ -86,7 +86,7 @@ export default function TeacherPanel() {
     await api.post("/auth/notifications/invite-test", { student_ids: inviteSelected, payload });
     setShowInviteModal(false);
     setInviteSelected([]);
-    showMsg(`Приглашения отправлены (${inviteSelected.length}) ✓`);
+    showMsg(`Приглашения отправлены (${inviteSelected.length})`);
   }
 
   function toggleInvite(id) {
@@ -262,27 +262,51 @@ export default function TeacherPanel() {
 
       {showInviteModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100 }}>
-          <div style={{ background: "white", borderRadius: 12, padding: "1.5rem", width: 400, maxHeight: "80vh", overflowY: "auto" }}>
-            <h3 style={{ margin: "0 0 1rem" }}>Пригласить на тест «{selected?.title}»</h3>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem" }}>
-              <button onClick={() => setInviteSelected(students.map(s => s.id))} style={{ fontSize: 12, cursor: "pointer" }}>Выбрать всех</button>
-              <button onClick={() => setInviteSelected([])} style={{ fontSize: 12, cursor: "pointer" }}>Снять выбор</button>
+          <div style={{ background: "white", borderRadius: 12, padding: "1.5rem", width: 420, maxWidth: "calc(100vw - 2rem)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+            <h3 style={{ margin: "0 0 0.35rem" }}>Пригласить на тест</h3>
+            <p style={{ margin: "0 0 1.25rem", fontSize: 13, color: "var(--color-ink-secondary)" }}>{selected?.title}</p>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
+              <span style={{ fontSize: 12, color: "var(--color-ink-secondary)" }}>
+                Выбрано: {inviteSelected.length} из {students.length}
+              </span>
+              <div style={{ display: "flex", gap: "0.4rem" }}>
+                <button onClick={() => setInviteSelected(students.map(s => s.id))} style={{ fontSize: 12, padding: "0.3rem 0.7rem" }}>Выбрать всех</button>
+                <button onClick={() => setInviteSelected([])} style={{ fontSize: 12, padding: "0.3rem 0.7rem" }}>Снять выбор</button>
+              </div>
             </div>
-            {students.length === 0 && <p style={{ color: "#999" }}>Нет учеников для приглашения</p>}
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
-              {students.map(s => (
-                <label key={s.id} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.5rem", border: "1px solid #eee", borderRadius: 6, cursor: "pointer" }}>
-                  <input type="checkbox" checked={inviteSelected.includes(s.id)} onChange={() => toggleInvite(s.id)} />
-                  <div>
-                    <div style={{ fontWeight: 500, fontSize: 14 }}>{s.name}</div>
-                    <div style={{ fontSize: 12, color: "#666" }}>{s.email}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              <button onClick={sendTestInvites} disabled={inviteSelected.length === 0}
-                style={{ flex: 1, background: "#1a1a2e", color: "white", border: "none", padding: "0.75rem", borderRadius: 6, cursor: "pointer" }}>
+
+            {students.length === 0
+              ? <p style={{ color: "var(--color-ink-tertiary)", fontSize: 14, padding: "1rem 0" }}>Нет учеников для приглашения</p>
+              : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1.25rem", overflowY: "auto" }}>
+                  {students.map(s => {
+                    const checked = inviteSelected.includes(s.id);
+                    return (
+                      <label key={s.id} style={{
+                        display: "flex", alignItems: "center", gap: "0.75rem",
+                        padding: "0.6rem 0.75rem",
+                        border: `1px solid ${checked ? "var(--accent)" : "var(--color-border)"}`,
+                        background: checked ? "var(--color-paper-secondary)" : "white",
+                        borderRadius: "var(--radius-sm)", cursor: "pointer", transition: "border-color 0.15s, background 0.15s",
+                      }}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleInvite(s.id)} />
+                        <span style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+                          <span style={{ fontWeight: 500, fontSize: 14, lineHeight: 1.4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {s.name || "Без имени"}
+                          </span>
+                          <span style={{ fontSize: 12, lineHeight: 1.4, color: "var(--color-ink-secondary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {s.email}
+                          </span>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "auto" }}>
+              <button onClick={sendTestInvites} disabled={inviteSelected.length === 0} className="primary"
+                style={{ flex: 1, padding: "0.7rem" }}>
                 Отправить ({inviteSelected.length})
               </button>
               <button onClick={() => setShowInviteModal(false)} style={{ padding: "0.75rem 1rem", borderRadius: 6, cursor: "pointer" }}>Отмена</button>

@@ -26,7 +26,7 @@ export default function UserManager() {
     try {
       await api.patch(`/auth/users/${userId}/role?role=${role}`);
       setUsers(users.map(u => u.id === userId ? { ...u, role } : u));
-      showMsg("Роль обновлена ✓");
+      showMsg("Роль обновлена");
     } catch { showMsg("Ошибка при обновлении роли"); }
     setSaving(null);
   }
@@ -36,7 +36,7 @@ export default function UserManager() {
     try {
       const r = await api.patch(`/auth/users/${userId}/freeze`);
       setUsers(users.map(u => u.id === userId ? { ...u, is_frozen: r.data.is_frozen } : u));
-      showMsg(r.data.is_frozen ? "Аккаунт заморожен" : "Аккаунт разморожен ✓");
+      showMsg(r.data.is_frozen ? "Аккаунт заморожен" : "Аккаунт разморожен");
     } catch { showMsg("Ошибка"); }
     setSaving(null);
   }

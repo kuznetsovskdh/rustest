@@ -9,6 +9,8 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  // ?next= ставит ссылка-приглашение на тест: после регистрации возвращаем туда же.
+  const nextPath = new URLSearchParams(window.location.search).get("next") || "/catalog";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -17,7 +19,7 @@ export default function Register() {
     try {
       const res = await api.post("/auth/register", { email, password, name });
       localStorage.setItem("token", res.data.access_token);
-      navigate("/catalog");
+      navigate(nextPath);
     } catch {
       setError("Ошибка регистрации. Возможно email уже занят.");
     }

@@ -22,7 +22,7 @@ export default function Notifications() {
   async function acceptInvite(notif) {
     await api.post(`/auth/notifications/${notif.id}/accept`);
     setNotifs(notifs.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
-    showMsg("Вы приняли приглашение ✓");
+    showMsg("Вы приняли приглашение");
   }
 
   async function declineInvite(notif) {

@@ -54,7 +54,7 @@ body {
 h1, h2, h3 {
   font-family: var(--font-serif);
   font-weight: 400;
-  line-height: 1.2;
+  line-height: 1.35;
   letter-spacing: -0.01em;
 }
 
@@ -62,9 +62,17 @@ h1 { font-size: clamp(2rem, 5vw, 3rem); }
 h2 { font-size: clamp(1.4rem, 3vw, 2rem); }
 h3 { font-size: clamp(1rem, 2vw, 1.25rem); }
 
+p { line-height: 1.7; }
+
+/* Многие блоки собраны из соседних div'ов с мелким текстом (название + категория,
+   имя + почта). Без этого строки слипаются и выглядят неаккуратно. */
+label, td, th, li { line-height: 1.6; }
+
 a { color: inherit; text-decoration: none; }
 
-input, textarea, select {
+/* Чекбоксы и радио исключены: глобальный width:100% растягивал их на всю ширину
+   контейнера и выдавливал соседний текст за пределы блока. */
+input:not([type="checkbox"]):not([type="radio"]), textarea, select {
   font-family: var(--font-sans);
   font-size: 0.875rem;
   font-weight: 300;
@@ -77,9 +85,18 @@ input, textarea, select {
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-input:focus, textarea:focus, select:focus {
+input:not([type="checkbox"]):not([type="radio"]):focus, textarea:focus, select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(26,26,46,0.08);
+}
+
+input[type="checkbox"], input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 button {

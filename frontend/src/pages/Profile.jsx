@@ -25,7 +25,7 @@ export default function Profile() {
     try {
       await api.patch("/auth/me/name", { name });
       setUser({ ...user, name });
-      showMsg("Имя обновлено ✓");
+      showMsg("Имя обновлено");
     } catch { showMsg("Ошибка при обновлении", true); }
   }
 
@@ -35,7 +35,7 @@ export default function Profile() {
     try {
       await api.patch("/auth/me/password", { old_password: oldPassword, new_password: newPassword });
       setOldPassword(""); setNewPassword("");
-      showMsg("Пароль изменён ✓");
+      showMsg("Пароль изменён");
     } catch { showMsg("Неверный текущий пароль", true); }
   }
 

@@ -45,9 +45,11 @@ export default function Navbar() {
       backdropFilter: scrolled ? "blur(12px)" : "none",
       borderBottom: `1px solid ${scrolled ? "var(--color-border)" : "transparent"}`,
       transition: "all 0.2s",
-      padding: "0 2rem",
+      padding: "0 1.5rem",
     }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", height: 60 }}>
+      {/* Во всю ширину, без центрирующего maxWidth: бренд и разделы прижаты
+          к левому краю, блок профиля — к правому. */}
+      <div style={{ width: "100%", display: "flex", alignItems: "center", height: 60 }}>
         <Link to="/catalog" style={{ fontFamily: "var(--font-serif)", fontSize: "1.3rem", fontWeight: 400, letterSpacing: "-0.01em", marginRight: "2.5rem" }}>
           Рустест
         </Link>

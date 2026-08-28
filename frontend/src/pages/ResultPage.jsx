@@ -54,8 +54,11 @@ export default function ResultPage() {
           return (
             <div key={i} style={{ border: `1px solid ${a.is_correct ? "#c8e6c9" : "#ffcdd2"}`, borderRadius: 8, overflow: "hidden" }}>
               <div style={{ padding: "0.75rem 1rem", background: a.is_correct ? "#e8f5e9" : "#ffebee" }}>
-                <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                  {a.is_correct ? "✅" : "❌"} Вопрос {i + 1}: {q?.text}
+                <div style={{ display: "flex", alignItems: "baseline", gap: "0.6rem", marginBottom: 6 }}>
+                  <span className={a.is_correct ? "tag tag-green" : "tag tag-red"} style={{ flexShrink: 0 }}>
+                    {a.is_correct ? "Верно" : "Ошибка"}
+                  </span>
+                  <span style={{ fontWeight: 500, lineHeight: 1.6 }}>Вопрос {i + 1}: {q?.text}</span>
                 </div>
                 {!a.is_correct && (
                   <div style={{ fontSize: 13, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -68,7 +71,7 @@ export default function ResultPage() {
                 <div>
                   <button onClick={() => loadRule(ruleId)}
                     style={{ width: "100%", padding: "0.5rem 1rem", background: "#f5f5f5", border: "none", borderTop: "1px solid #ddd", cursor: "pointer", textAlign: "left", fontSize: 13, color: "#1565c0" }}>
-                    📚 {expandedRule === ruleId ? "Скрыть правило" : "Почитать правило"}
+                    {expandedRule === ruleId ? "Скрыть правило" : "Почитать правило"}
                   </button>
                   {expandedRule === ruleId && rules[ruleId] && (
                     <div style={{ padding: "1rem", borderTop: "1px solid #eee", background: "white" }}>
@@ -77,10 +80,10 @@ export default function ResultPage() {
                       {rules[ruleId].examples?.length > 0 && (
                         <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
                           {rules[ruleId].examples.map((ex, j) => (
-                            <div key={j} style={{ background: "#f9f9f9", borderRadius: 6, padding: "0.5rem 0.75rem", fontSize: 13 }}>
-                              <div style={{ color: "#2e7d32" }}>✓ {ex.correct}</div>
-                              {ex.incorrect && <div style={{ color: "#c62828" }}>✗ {ex.incorrect}</div>}
-                              {ex.comment && <div style={{ color: "#666" }}>{ex.comment}</div>}
+                            <div key={j} style={{ background: "#f9f9f9", borderRadius: 6, padding: "0.6rem 0.75rem", fontSize: 13, lineHeight: 1.7 }}>
+                              <div style={{ color: "#2e7d32" }}>Верно: {ex.correct}</div>
+                              {ex.incorrect && <div style={{ color: "#c62828" }}>Неверно: {ex.incorrect}</div>}
+                              {ex.comment && <div style={{ color: "#666", marginTop: 2 }}>{ex.comment}</div>}
                             </div>
                           ))}
                         </div>

@@ -12,6 +12,7 @@ export default function Login() {
   );
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const nextPath = new URLSearchParams(window.location.search).get("next") || "/catalog";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -19,7 +20,7 @@ export default function Login() {
     try {
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.access_token);
-      navigate("/catalog");
+      navigate(nextPath);
     } catch (err) {
       setError(
         err.response?.status === 403

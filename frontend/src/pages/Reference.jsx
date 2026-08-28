@@ -51,7 +51,7 @@ export default function Reference() {
     const r = await api.get(`/rules/${selected.id}`);
     setSelected(r.data);
     setEditMode(false);
-    showMsg("Правило обновлено ✓");
+    showMsg("Правило обновлено");
   }
 
   function startEdit() {
@@ -81,7 +81,7 @@ export default function Reference() {
 
   async function linkRuleToQuestion(testId, questionId) {
     await api.patch(`/tests/${testId}/questions/${questionId}/rule?rule_id=${selected.id}`);
-    showMsg("Правило привязано к вопросу ✓");
+    showMsg("Правило привязано к вопросу");
     setShowLinkModal(false);
   }
 
@@ -141,8 +141,8 @@ export default function Reference() {
                 <h4 style={{ margin: "1rem 0 0.5rem" }}>Примеры</h4>
                 {selected.examples.map((ex, i) => (
                   <div key={i} style={{ background: "#f9f9f9", borderRadius: 6, padding: "0.75rem", marginBottom: "0.5rem" }}>
-                    <div style={{ color: "#2e7d32", fontWeight: 500 }}>✓ {ex.correct}</div>
-                    {ex.incorrect && <div style={{ color: "#c62828", marginTop: 2 }}>✗ {ex.incorrect}</div>}
+                    <div style={{ color: "#2e7d32", fontWeight: 500 }}>Верно: {ex.correct}</div>
+                    {ex.incorrect && <div style={{ color: "#c62828", marginTop: 2 }}>Неверно: {ex.incorrect}</div>}
                     {ex.comment && <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>{ex.comment}</div>}
                   </div>
                 ))}
