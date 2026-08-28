@@ -12,30 +12,45 @@ export default function ProductAnalytics() {
   const [questions, setQuestions] = useState({});
   const [testNames, setTestNames] = useState({});
 
+  const [failed, setFailed] = useState([]);
+
   const load = useCallback(async () => {
     setRefreshing(true);
-    const [f, r, d, a, dm, fbt, sd, doff, cohort, actFunnel] = await Promise.all([
-      api.get("/analytics/funnel"),
-      api.get("/analytics/retention"),
-      api.get("/analytics/question-difficulty"),
-      api.get("/analytics/daily-activity"),
-      api.get("/analytics/dau-mau"),
-      api.get("/analytics/funnel-by-test"),
-      api.get("/analytics/score-distribution"),
-      api.get("/analytics/dropoff"),
-      api.get("/analytics/cohort-retention"),
-      api.get("/analytics/activation-funnel"),
-    ]);
-    setData({
-      funnel: f.data, retention: r.data, difficulty: d.data,
-      activity: Array.isArray(a.data) ? a.data : [],
-      dauMau: dm.data,
-      funnelByTest: Array.isArray(fbt.data) ? fbt.data : [],
-      scoreDist: sd.data,
-      dropoff: Array.isArray(doff.data) ? doff.data : [],
-      cohortRetention: Array.isArray(cohort.data) ? cohort.data : [],
-      activationFunnel: actFunnel.data,
+    // allSettled, а не all: одна упавшая метрика не должна уносить всю страницу —
+    // остальные девять показываем, по упавшим выводим предупреждение.
+    const metrics = [
+      ["funnel", "/analytics/funnel", "Воронка"],
+      ["retention", "/analytics/retention", "Retention"],
+      ["difficulty", "/analytics/question-difficulty", "Сложность вопросов"],
+      ["activity", "/analytics/daily-activity", "Активность"],
+      ["dauMau", "/analytics/dau-mau", "DAU/MAU"],
+      ["funnelByTest", "/analytics/funnel-by-test", "Воронка по тестам"],
+      ["scoreDist", "/analytics/score-distribution", "Распределение баллов"],
+      ["dropoff", "/analytics/dropoff", "Drop-off"],
+      ["cohortRetention", "/analytics/cohort-retention", "Cohort Retention"],
+      ["activationFunnel", "/analytics/activation-funnel", "Activation Funnel"],
+    ];
+    const results = await Promise.allSettled(metrics.map(([, url]) => api.get(url)));
+    const next = {};
+    const broken = [];
+    results.forEach((res, i) => {
+      const [key, , label] = metrics[i];
+      if (res.status === "fulfilled") {
+        next[key] = res.value.data;
+      } else {
+        next[key] = null;
+        broken.push(label);
+      }
     });
+    const asArray = (v) => (Array.isArray(v) ? v : []);
+    setData({
+      ...next,
+      activity: asArray(next.activity),
+      funnelByTest: asArray(next.funnelByTest),
+      dropoff: asArray(next.dropoff),
+      cohortRetention: asArray(next.cohortRetention),
+    });
+    setFailed(broken);
     setLoading(false);
     setRefreshing(false);
   }, []);
@@ -131,6 +146,12 @@ export default function ProductAnalytics() {
         </div>
       </div>
 
+      {failed.length > 0 && (
+        <div style={{ padding: "0.75rem 1rem", marginBottom: "1.5rem", background: "#fff8e1", border: "1px solid #ffe082", borderRadius: 8, fontSize: 13, color: "#8d6e00" }}>
+          Не удалось загрузить: {failed.join(", ")}. Остальные метрики показаны актуальными.
+        </div>
+      )}
+
       {dauMau && (
         <div style={{ border: "1px solid #ddd", borderRadius: 8, padding: "1.25rem", marginBottom: "1.5rem" }}>
           <h3 style={{ margin: "0 0 1rem" }}>DAU / MAU</h3>
@@ -224,17 +245,28 @@ export default function ProductAnalytics() {
           </div>
           {segmentBy !== "none" && segmentedFunnel.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
-              {segmentedFunnel.map((row, i) => (
+              {segmentedFunnel.map((row, i) => {
+                // Конверсия на выборке меньше 30 наблюдений статистически ненадёжна —
+                // помечаем явно, чтобы 3 ученика не читались как 500.
+                const small = row.started < 30;
+                return (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                   <span style={{ width: 180, fontSize: 13, color: "#333" }}>
                     {testNames[row.test_id] || `Тест #${row.test_id}`} · <b>{row.segment}</b>
                   </span>
                   <div style={{ flex: 1, background: "#f0f0f0", borderRadius: 4, height: 20 }}>
-                    <div style={{ width: `${row.conversion}%`, background: row.conversion >= 70 ? "#2e7d32" : "#c62828", height: "100%", borderRadius: 4 }} />
+                    <div style={{ width: `${row.conversion}%`, background: small ? "#bdbdbd" : row.conversion >= 70 ? "#2e7d32" : "#c62828", height: "100%", borderRadius: 4 }} />
                   </div>
-                  <span style={{ minWidth: 110, fontSize: 13, fontWeight: 500, textAlign: "right" }}>{row.conversion}% ({row.started}→{row.finished})</span>
+                  <span style={{ minWidth: 110, fontSize: 13, fontWeight: 500, textAlign: "right", color: small ? "#888" : "inherit" }}>
+                    {row.conversion}% ({row.started}→{row.finished})
+                  </span>
+                  <span style={{ width: 90, fontSize: 11, color: "#b26a00" }}
+                    title="Меньше 30 наблюдений — доверительный интервал слишком широкий для выводов">
+                    {small ? "малая выборка" : ""}
+                  </span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
@@ -344,10 +376,13 @@ export default function ProductAnalytics() {
                   <td style={{ padding: "0.5rem" }}>{c.cohort_size}</td>
                   {["W0","W1","W2","W3","W4"].map(w => {
                     const val = c[w];
-                    const bg = val >= 50 ? "#c8e6c9" : val >= 20 ? "#fff9c4" : val > 0 ? "#ffe0b2" : "#f5f5f5";
+                    // null = неделя ещё не наступила («рано считать»), это не 0% оттока
+                    const pending = val === null || val === undefined;
+                    const bg = pending ? "transparent" : val >= 50 ? "#c8e6c9" : val >= 20 ? "#fff9c4" : val > 0 ? "#ffe0b2" : "#f5f5f5";
                     return (
-                      <td key={w} style={{ padding: "0.5rem", textAlign: "center", background: bg }}>
-                        {val}%
+                      <td key={w} title={pending ? "Неделя ещё не наступила" : undefined}
+                        style={{ padding: "0.5rem", textAlign: "center", background: bg, color: pending ? "#bbb" : "inherit" }}>
+                        {pending ? "—" : `${val}%`}
                       </td>
                     );
                   })}

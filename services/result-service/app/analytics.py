@@ -185,18 +185,32 @@ def get_cohort_retention(db: Session):
 
     merged = reg_df.merge(act_df, on="user_id", how="left")
     merged["activity_date"] = pd.to_datetime(merged["activity_date"])
-    merged["week_diff"] = (merged["activity_date"] - merged["reg_date"]).dt.days // 7
+    # Когорта задана календарной неделей регистрации, поэтому и W1/W2/... считаем
+    # по календарным неделям активности, а не скользящими 7 днями от личного
+    # времени регистрации — иначе воскресный регистрант, активный в понедельник,
+    # попадал бы в W0, хотя календарно это уже следующая неделя когорты.
+    cohort_start = pd.to_datetime(merged["cohort_week"])
+    activity_week_start = merged["activity_date"].dt.to_period("W").dt.start_time
+    merged["week_diff"] = (activity_week_start - cohort_start).dt.days // 7
 
     cohorts = reg_df.groupby("cohort_week")["user_id"].nunique().reset_index()
     cohorts.columns = ["cohort_week", "cohort_size"]
+
+    # Неделя, которая ещё не наступила, — это не 0% retention, а «рано считать»:
+    # такие ячейки отдаём как null, чтобы heatmap не показывал фиктивный ноль.
+    current_week_start = pd.Timestamp.utcnow().tz_localize(None).to_period("W").start_time
 
     result = []
     for _, row in cohorts.sort_values("cohort_week").iterrows():
         week = row["cohort_week"]
         size = row["cohort_size"]
         cohort_users = reg_df[reg_df["cohort_week"] == week]["user_id"]
+        weeks_elapsed = (current_week_start - pd.to_datetime(week)).days // 7
         entry = {"cohort_week": week, "cohort_size": int(size)}
         for w in range(5):
+            if w > weeks_elapsed:
+                entry[f"W{w}"] = None
+                continue
             active_users = merged[
                 (merged["cohort_week"] == week) &
                 (merged["week_diff"] == w) &

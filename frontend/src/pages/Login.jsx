@@ -5,7 +5,11 @@ import api from "../api/client";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    new URLSearchParams(window.location.search).has("expired")
+      ? "Сессия истекла — войдите заново"
+      : ""
+  );
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -16,8 +20,12 @@ export default function Login() {
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.access_token);
       navigate("/catalog");
-    } catch {
-      setError("Неверный email или пароль");
+    } catch (err) {
+      setError(
+        err.response?.status === 403
+          ? "Аккаунт заморожен — обратитесь к администратору"
+          : "Неверный email или пароль"
+      );
     }
     setLoading(false);
   }

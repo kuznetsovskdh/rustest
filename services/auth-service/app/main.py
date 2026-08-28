@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from pydantic import BaseModel
 from app.database import Base, engine, get_db
@@ -39,7 +40,12 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     user = User(email=data.email, hashed_password=hash_password(data.password), name=data.name)
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Гонка: параллельный запрос успел вставить тот же email между проверкой и commit.
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email already registered")
     db.refresh(user)
     try:
         httpx.post(f"{os.getenv('RESULT_SERVICE_URL', 'http://result-service:8000')}/events/registered",
